@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Arduino To Node</title>
+<!-- Code -->
+<script type="text/javascript" src="dat.gui.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+
+// CONFIGURATION
+//===============
+var adresseDuServeur = "localhost:8080";
+
+// INITIALISATION
+//===============    
+ //  Créer un objet qui s'appelle arduino avec une propriété qui se nomme "A0".
+var arduino = {A0:0};   
+
+    
+// Initialiser dat.GUI.
+var gui = new dat.GUI();
+// Ajouter un contrôleur pour recevoir le massage "A0" et activer son écoute automatique.
+gui.add(arduino, 'A0', 0, 1023).listen();
+    
+// CONNEXION ÉTABLIE
+//===============
+function onOpen( ) {
+    alert("yeah");
+}
+
+// RECEPTION DE DONNÉES
+//===============
+//  Déclarer quoi faire quand la page reçoit un message de Node
+function onMessageReceived( message ) {
+
+    // Séparer le message en mots.
+    var wordArray = message.data.split(" ");
+    // S'assurer qu'on a au moins deux mots.
+    if ( wordArray.length > 1 ) {
+        var firstWord = wordArray[0];
+        var secondWord = wordArray[1];
+        // Vérifier si le premier mot du message est "a0".
+        if ( firstWord  == "A0" ) {
+            // Transformer le deuxième mot en entier.
+            arduino.A0 = parseInt(secondWord);
+            // Changer la couleur de l'arriere plan
+            var hue = arduino.A0 / 1024 * 360;
+            var hslString = "hsl("+hue+",100%,50%)";
+            document.body.style.background = hslString;
+        }
+    }
+}    
+
+
+// INITIALISER LE LIEN AVEC NODE
+//===============
+function initNodeSocket() {
+
+	//  Map implementation differences to single reference
+	window.WebSocket = window.WebSocket || window.MozWebSocket;		
+	//  Instantiate the web socket
+	socket = new WebSocket( 'ws://'+adresseDuServeur );
+	//  Attach event handlers
+	socket.onmessage = onMessageReceived;
+	socket.onopen = onOpen;
+
+}
+    
+// Démarrer le lien avec node lorsque la page est chargée.
+window.onload = initNodeSocket;
+    
+</script>
+</body>
+</html>

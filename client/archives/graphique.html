@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Arduino To Node (graphical)</title>
+<!-- Code -->
+<script type="text/javascript" src="dat.gui.js"></script>
+</head>
+<body style="margin: 0px; overflow: hidden;background-color:rgb(60,60,60);">
+            <canvas id="mon_canvas" style="display:block;margin:0; padding:0;"> 
+            Texte alternatif pour les navigateurs ne supportant pas Canvas.
+        </canvas>
+<script type="text/javascript">
+
+// CONFIGURATION
+//===============
+var adresseDuServeur = "localhost:8080";
+
+// INITIALISATION
+//===============    
+ //  Créer un objet qui s'appelle arduino avec une propriété qui se nomme "A0".
+var arduino = {A0:0};   
+
+    
+// Initialiser dat.GUI.
+var gui = new dat.GUI();
+// Ajouter un contrôleur pour recevoir le massage "A0" et activer son écoute automatique.
+gui.add(arduino, 'A0', 0, 1023).listen();
+    
+// CONNEXION ÉTABLIE
+//===============
+function onOpen( ) {
+   
+}
+
+// RECEPTION DE DONNÉES
+//===============
+//  Déclarer quoi faire quand la page reçoit un message de Node
+function onMessageReceived( message ) {
+
+    // Séparer le message en mots.
+    var wordArray = message.data.split(" ");
+    // S'assurer qu'on a au moins deux mots.
+    if ( wordArray.length > 1 ) {
+        var firstWord = wordArray[0];
+        var secondWord = wordArray[1];
+        // Vérifier si le premier mot du message est "a0".
+        if ( firstWord  == "A0" ) {
+            // Transformer le deuxième mot en entier.
+            arduino.A0 = parseInt(secondWord);
+            // Changer la couleur de l'arriere plan
+            var hue = arduino.A0 / 1024 * 360;
+            var hslString = "hsl("+hue+",100%,50%)";
+            document.body.style.background = hslString;
+        }
+    }
+}    
+
+
+// INITIALISER LE LIEN AVEC NODE
+//===============
+function initNodeSocket() {
+
+	//  Map implementation differences to single reference
+	window.WebSocket = window.WebSocket || window.MozWebSocket;		
+	//  Instantiate the web socket
+	socket = new WebSocket( 'ws://'+adresseDuServeur );
+	//  Attach event handlers
+	socket.onmessage = onMessageReceived;
+	socket.onopen = onOpen;
+
+}
+    
+// Démarrer le lien avec node lorsque la page est chargée.
+window.onload = initNodeSocket;
+    
+</script>
+<script type="text/javascript">
+
+// TROUVER LE CANVAS ET INITALISER LE CONTEXTE DE DESSIN
+// =====================================================
+            var canvas = document.getElementById("mon_canvas");
+            var context = canvas.getContext("2d");
+
+// ESPACE GLOBAL ET PRECHARGEMENT D'IMAGES
+// ==================
+           var cat = preSetupLoadImage("http://www.nozebra.dk/files/demos/dw-tech/lib/images/html5cat.png") ;
+            
+           
+// INITIALISATION
+// ==============
+            function setup() {
+                console.log(cat.width+" "+cat.height);
+                
+            }
+
+// ANIMATION
+// =========
+            function animate() {
+                context.drawImage(cat,0,0);
+                var pixelData = context.getImageData(mouse.x, mouse.y, 1, 1);
+                var pixelArray = pixelData.data;
+                var r = pixelArray[0];
+                var g = pixelArray[1];
+                var b = pixelArray[2];
+                
+                context.fillText("  r : "+r+", g : "+g+", b : "+b, mouse.x+5, mouse.y+15);
+            }
+
+
+// DÉPLACEMENT DE LA SOURIS
+// ========================
+            function onMouseMove() {
+               
+            }
+
+// CLIQUE
+// ======
+            function onMouseDown() {
+               
+            }
+
+// CLIQUE RELÂCHÉ
+// ==============
+            function onMouseUp() {
+                
+            }
+
+// CLAVIER
+// =======
+            function onKeyDown(keyCode) {
+
+            }
+            
+            function onKeyUp(keyCode) {
+
+            }
+
+
+// CODE INTERNE (AVANCÉ)
+// =========================================================================
+// =========================================================================
+         
+            // VARIABLES DÉFINIES PAR LE CODE INTERNE :
+            // millis : la durée de l'animation en millisecondes depuis le début.
+            // mouse.x : position horizontale de la souris.
+            // mouse.y : position verticale de la souris.
+            // mousePressed : état du bouton (0:relâché ou 1:appuyé).
+            // mouseDown.x : position horizontale de la souris lorsque le bouton a été appuyé.
+            // mouseDown.y : position verticale de la souris lorsque le bouton a été appuyé.
+            // mouseUp.x : position horizontale de la souris lorsque le bouton a été relâché.
+            // mouseUp.y : position verticale de la souris lorsque le bouton a été relâché.
+
+            
+            // Version 1.02
+            // Changes :
+            // Added a way to preload images.
+
+            // La durée de l'animation en millisecondes depuis le début.
+            var millis = 0; 
+
+            // SOURIS
+            // Position de la souris :
+            var mouse = {x:0,y:0}; 
+             // mousePressed : etat du bouton (0:relâché ou 1:appuyé).
+            var mousePressed = 0;
+            // Position lorsque le bouton de la souris a été appuyé :
+            var mouseDown = {x:0,y:0}; 
+            // Position du dernier clique de la souris a été relaché :
+            var mouseUp = {x:0,y:0}; 
+            
+
+            // DÉPLACEMENT DE LA SOURIS
+            function surogateOnMouseMove(event) {
+
+              // Sauvegarder la position de la souris.
+               mouse.x = event.clientX;
+               mouse.y = event.clientY;   
+               onMouseMove(event);   
+            }
+
+            // BOUTON APPUYÉ
+            function surogateOnMouseDown(event) {
+                // Sauvegarder la position de la souris lorsque le bouton a été appuyé:
+               mouseDown.x = event.clientX;
+               mouseDown.y = event.clientY;  
+               // Mettre l'etat du bouton à 1 :
+               mousePressed = 1;     
+               onMouseDown(event);
+            }
+            
+            // BOUTON RELACHÉ
+            function surogateOnMouseUp(event) {
+               // Sauvegarder la position de la souris lorsque le bouton a été relâché:
+               mouseUp.x = event.clientX;
+               mouseUp.y = event.clientY;  
+               // Mettre l'etat du bouton à 0 :
+               mousePressed = 0;
+               onMouseUp(event);
+            }
+
+             // Lier la fonction onMouseDown() au clique de la souris :
+            canvas.addEventListener('mousedown', surogateOnMouseDown , false);
+            // Lier la fonction onMouseMove() au déplacement de la souris :
+            canvas.addEventListener('mousemove', surogateOnMouseMove , false);
+            // Lier la fonction onMouseUp() au relachement de la souris :
+            window.addEventListener('mouseup', surogateOnMouseUp , false);
+
+            // CLAVIER
+            var surogateKeys = [];
+            function surogateKeyDown(event) {   
+                if ( surogateKeys[event.keyCode] != 1 ) {
+                    surogateKeys[event.keyCode] = 1;
+                    onKeyDown(event.keyCode,event);
+                }
+
+            }
+
+            function surogateKeyUp(event) {
+                if ( surogateKeys[event.keyCode] != 0 ) {
+                    surogateKeys[event.keyCode] = 0;
+                    onKeyUp(event.keyCode.event);
+                }
+            }
+
+            window.addEventListener("keydown", surogateKeyDown, false);
+            window.addEventListener("keyup", surogateKeyUp, false);
+
+            // FONCTIONS DE DÉCLENCHEMENT PAR DÉFAULT
+            this.onMouseUp = this.onMouseUp || function() {};
+            this.onMouseMove = this.onMouseMove || function() {};
+            this.onMouseDown = this.onMouseDown || function() {};
+            this.onKeyDown = this.onKeyDown || function() {};
+            this.onKeyUp = this.onKeyUp || function() {};
+            this.setup = this.setup ||  function() {};
+            this.animate = this.animate ||  function() {};
+
+            // AJUSTEMENT AUTOMATIQUE À LA FENETRE
+            function fillCanvasToWindow() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight ;                
+            }
+
+            // PRECHARGEMENT D'IMAGES
+            //var surogateImagesToPreload = [];
+            //var surogateImagesPreloaded = true;
+            var surogateImagesToPreload = 0;
+            function preSetupLoadImage(source) {
+                
+                //surogateImagesPreloaded = false;
+                
+                surogateImagesToPreload++;
+                
+                var image = new Image();
+                image.onload = function() {
+                    surogateImagesToPreload--;
+                    continueIfReady();
+                  };
+                image.src = source;
+                
+                return image;
+
+            }
+
+            
+            
+            // INITIALISATION
+            function continueIfReady() {
+                if ( surogateImagesToPreload <= 0) {
+                    setup();
+                    surogateAnimate();
+                }
+            }
+            
+            // Code a lancer lorsque le document est chargé :
+            function onContentLoaded() {
+                 // Lier la fonction fillCanvasToWindow() au changement de taille de la fenêtre : 
+                window.addEventListener('resize', fillCanvasToWindow, false);
+                fillCanvasToWindow();
+                continueIfReady();
+            }
+            // Lier la fonction précédente au moment lorsque le docuement est chargé :
+            document.addEventListener('DOMContentLoaded', onContentLoaded ,false);
+
+            // ANIMATION
+            function surogateAnimate(timeStamp) {
+                  // Lancer la récursivité de l'animation (obligatoire!).
+                requestAnimationFrame(surogateAnimate); 
+                // Sauvegarder la durée de l'animation.
+                millis = timeStamp;
+                animate();
+            }
+            
+            
+        </script>
+</body>
+</html>

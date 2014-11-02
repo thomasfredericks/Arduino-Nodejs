@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>Arduino To Node (graphical)</title>
+        <!-- Code -->
+        <script type="text/javascript" src="dat.gui.js"></script>
+        <script type="text/javascript" src="goo.min.js"></script>
+        <script type="text/javascript" src="arduinoClient.js"></script>
+    </head>
+    <body style="margin: 0px; overflow: hidden;background-color:rgb(60,60,60);">
+
+        <script type="text/javascript">
+            
+             //  Créer un objet "A0".
+            var A0 = {raw:0,min:-5,max:5,normalized:0,initialized:true};   
+            
+            // Initialiser dat.GUI.
+            var gui = new dat.GUI();
+            
+            var A0Folder = gui.addFolder('A0');
+            A0Folder.add(A0, 'raw').listen();
+            A0Folder.add(A0, 'max').listen();
+            A0Folder.add(A0, 'min').listen();
+            A0Folder.add(A0,'normalized', 0. , 1.).listen();
+            A0Folder.open();
+            
+            
+            var dataArray = [];
+            for ( var i = 0; i < 100 ; i++ ) {
+                dataArray[i] =  Math.random();
+            }
+            
+            var arduinoClient = new ArduinoClient("localhost:8080");
+            arduinoClient.onMassage = function(address,value) {
+                if ( address == "A0") {
+                    if ( A0.initialized == false ) {
+                         A0.min = A0.max = value;
+                       A0.initialized = true;
+                        
+                    } else {
+                       //   if ( value > A0.max)  A0.max = value;
+                        // else if ( value < A0.min ) A0.min = value;                       
+                        A0.normalized = (value - A0.min) / (A0.max - A0.min);
+                        dataArray.shift();
+                        dataArray.push(A0.normalized);
+                    }
+                    
+                   
+                    
+                    A0.raw = value;
+                }
+            }
+            
+
+            function runGoo ()  {
+
+                var g = new Goo({ fullscreen: true });
+
+                g.onDraw = function(g) {
+                    var canvas = g.canvas;
+                    var ctx = g.ctx;
+                    ctx.clearRect(0, 0, g.width, g.height);
+
+                    var columns = dataArray.length;
+
+                    var columnWidth = canvas.width / columns;
+
+                    for ( var c = 0 ; c < columns ; c ++ ) {
+                        var x = c * columnWidth;
+                        var y = 0;
+                        ctx.beginPath();
+                        ctx.rect(x,0,columnWidth,canvas.height*dataArray[c]);
+                        ctx.fillStyle="#E30B5D"; // raspberry
+                        ctx.fill();
+                    }
+                }
+            }
+
+            // Démarrer Goo lorsque le document est chargé :
+            document.addEventListener('DOMContentLoaded', runGoo);
+
+        </script>
+
+    </body>
+</html>
